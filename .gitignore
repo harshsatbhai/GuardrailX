@@ -10,3 +10,5 @@ __pycache__/
 
 # Keep trained model artifacts (shipped pretrained) but ignore future retrains' temp files
 ml-service/app/models/*.tmp
+ml-service/app/data/pii_masking_200k/
+ml-service/app/models/*.pkl
