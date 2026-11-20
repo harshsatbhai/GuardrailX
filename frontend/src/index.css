@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────────────────────────────────────────────
+   Theme: Orange + White (light) / Black + Orange (dark)
+   All colors are RGB triplets so Tailwind opacity modifiers keep working.
+   --color-accent       brand orange #FF6B00 (fills, borders, focus, icons)
+   --color-accent-text  deeper orange used ONLY for small orange text on white
+                        (#FF6B00 on white is ~3:1; #CC4400 is ~4.8:1)
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Dark theme (default when the OS prefers dark) */
+:root,
+[data-theme="dark"] {
+  --color-base: 13 13 13;          /* #0D0D0D */
+  --color-panel: 24 24 24;         /* #181818 */
+  --color-panel-2: 32 32 32;       /* #202020 */
+  --color-border: 42 42 42;        /* #2A2A2A */
+  --color-text: 245 245 245;
+  --color-text-muted: 160 160 160;
+  --color-accent: 255 107 0;       /* #FF6B00 */
+  --color-accent-text: 255 107 0;
+  --color-danger: 239 68 68;
+  --color-warn: 250 204 21;        /* yellow, distinct from the orange accent */
+  --color-safe: 34 197 94;
+}
+
+/* Light theme: orange + white */
+[data-theme="light"] {
+  --color-base: 255 255 255;       /* #FFFFFF main workspace */
+  --color-panel: 255 255 255;      /* cards, inputs, AI bubbles */
+  --color-panel-2: 248 248 248;    /* #F8F8F8 secondary sections */
+  --color-border: 229 229 229;     /* #E5E5E5 */
+  --color-text: 17 17 17;          /* #111111 */
+  --color-text-muted: 107 107 107; /* #6B6B6B */
+  --color-accent: 255 107 0;       /* #FF6B00 */
+  --color-accent-text: 204 68 0;   /* #CC4400, AA-contrast orange for small text */
+  --color-danger: 220 38 38;
+  --color-warn: 161 98 7;          /* amber-brown, distinct from the orange accent */
+  --color-safe: 21 128 61;
+}
+
+/* Sidebar surface. Light theme: soft grey sidebar on a white workspace. */
+[data-theme="light"] .sidebar-surface {
+  --color-panel: 248 248 248;
+  --color-panel-2: 237 237 237;
+  --color-base: 255 255 255;
+}
+/* Dark theme: sidebar slightly darker than cards, per the brand spec. */
+[data-theme="dark"] .sidebar-surface {
+  --color-panel: 17 17 17;         /* #111111 */
+  --color-panel-2: 30 30 30;
+  --color-border: 42 42 42;
+}
+/* Optional: black sidebar in light mode. Switch by setting
+   <html data-sidebar="dark"> in index.html (default is "light"). */
+html[data-sidebar="dark"][data-theme="light"] .sidebar-surface {
+  --color-base: 13 13 13;
+  --color-panel: 17 17 17;
+  --color-panel-2: 34 34 34;
+  --color-border: 42 42 42;
+  --color-text: 245 245 245;
+  --color-text-muted: 163 163 163;
+  --color-accent-text: 255 107 0;
+}
+
+/* Small orange text on white needs the deeper orange for contrast. */
+[data-theme="light"] .text-accent,
+[data-theme="light"] .hover\:text-accent:hover,
+[data-theme="light"] .group:hover .group-hover\:text-accent {
+  color: rgb(var(--color-accent-text));
+}
+
+::selection { background: rgb(var(--color-accent) / 0.25); }
+button:focus-visible, a:focus-visible {
+  outline: 2px solid rgb(var(--color-accent) / 0.65);
+  outline-offset: 2px;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar — global */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--color-border)); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Sidebar scrollbar — even thinner */
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgb(var(--color-border) / 0.6); border-radius: 4px; }
+
+/* Smooth theme transition */
+body, .theme-transition {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+/* ── Typing indicator animation ──────────────────────────────────────── */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30%            { transform: translateY(-4px); opacity: 1; }
+}
+
+.typing-dot {
+  display: inline-block;
+  animation: typing-bounce 1.3s ease-in-out infinite;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.18s; }
+.typing-dot:nth-child(3) { animation-delay: 0.36s; }
+
+/* ── Message fade-in animation ───────────────────────────────────────── */
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.msg-animate {
+  animation: msg-in 0.22s ease-out both;
+}
+
+/* ── Textarea auto-resize helper ─────────────────────────────────────── */
+textarea {
+  field-sizing: content;  /* progressive enhancement — ignored where unsupported */
+}

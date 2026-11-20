@@ -1,0 +1,21 @@
+{
+  "stage": "1 (binary safe/malicious)",
+  "ensemble_method": "stacking (logistic-regression meta-learner, 3-fold)",
+  "feature_representation": "word TF-IDF (25000, 1-3grams) + char TF-IDF (25000, 3-5grams) + domain features",
+  "dataset_path": "/Users/harsh/Desktop/Final Year Project(s)/ml-llm-security-system/ml-service/app/data/dataset_finred.csv",
+  "accuracy": 0.9548,
+  "precision": 0.9702,
+  "recall": 0.9648,
+  "f1_score": 0.9675,
+  "false_positive_rate": 0.0685,
+  "train_time_sec": 76.3,
+  "avg_inference_time_ms": 0.041,
+  "train_rows": 36169,
+  "test_rows": 9043,
+  "confusion_matrix": {
+    "tn": 2544,
+    "fp": 187,
+    "fn": 222,
+    "tp": 6090
+  }
+}
