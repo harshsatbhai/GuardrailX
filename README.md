@@ -311,3 +311,5 @@ of your Phase 1 report: Stage 1 (auth) → `middleware/auth.js`; Stage 2
 `llmService.js`; Stage 7 (NER filter) → `response_filter.py`; Stage 8/9
 (logging + dashboard) → `PromptLog.js` + `DashboardPage.jsx`; §3.3 (rate
 limiting) → `rateLimiter.js`.
+
+- Hitesh Rane ([GitHub](https://github.com/hiteshrane001))
