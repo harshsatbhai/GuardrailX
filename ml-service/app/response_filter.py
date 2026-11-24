@@ -184,8 +184,11 @@ def filter_response(text: str, domain: str = None) -> dict:
     # spaCy NER pass (named entities like PERSON) — best-effort, fail-safe:
     # any per-call spaCy error just skips this pass rather than crashing the
     # whole response filter (regex redactions above have already run).
+    # Only in finance mode: in general chat, redacting every PERSON entity
+    # mangles normal answers ("Albert Einstein developed..." became
+    # "[REDACTED] developed..."), which makes real LLM replies look broken.
     try:
-        nlp = _load_spacy()
+        nlp = _load_spacy() if domain == "finance" else None
         if nlp:
             doc = nlp(filtered)
             for ent in doc.ents:

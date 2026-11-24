@@ -102,6 +102,20 @@ def main():
         print(f"  SQL injection dataset: added {len(df) - before} new rows "
               f"({(sqli_df.label==1).sum()} malicious, {(sqli_df.label==0).sum()} safe)")
 
+    print("Loading conversational dataset and merging...")
+    conv_path = os.path.join(BASE_DIR, "data", "dataset_conversational.csv")
+    if not os.path.exists(conv_path):
+        import subprocess, sys
+        subprocess.run([sys.executable, os.path.join(BASE_DIR, "data", "build_conversational_dataset.py")], check=True)
+    conv_df = pd.read_csv(conv_path)[["text", "label"]]
+    # Conversational rows override any conflicting label for the exact same
+    # text (e.g. a bare "hello" that appeared inside a malicious sample set).
+    df = df[~df["text"].astype(str).str.strip().str.lower().isin(conv_df["text"].str.strip().str.lower())]
+    before = len(df)
+    df = pd.concat([df, conv_df], ignore_index=True).drop_duplicates(subset=["text"])
+    print(f"  Conversational dataset: added {len(df) - before} rows "
+          f"({(conv_df.label==1).sum()} malicious, {(conv_df.label==0).sum()} safe) — fixes 'hi'/'thanks' false positives")
+
     print(f"  {len(df)} rows loaded  (safe={sum(df.label==0)}, malicious={sum(df.label==1)})")
 
     print("Preprocessing text...")

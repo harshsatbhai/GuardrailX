@@ -182,23 +182,24 @@ def score_to_action(risk_score: float) -> str:
     return "ALLOW"
 
 
-def classify_prompt(raw_text: str, domain: str = None) -> dict:
-    """
-    Classify a prompt and return a risk assessment.
+_ZERO_WIDTH = re.compile(r"[​-‏⁠﻿]")
+_SPACED_LETTERS = re.compile(r"\b(?:[A-Za-z][ .\-_*]{1,2}){3,}[A-Za-z]\b")
+_LEET = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"})
 
-    Parameters
-    ----------
-    raw_text : str
-        The user's raw input prompt.
-    domain : str, optional
-        Deployment domain context.  Currently supported value: ``"finance"``.
-        When provided, finance-specific feature signals are computed and
-        merged into the feature vector, boosting detection of financial
-        threats (PII exfiltration, fraud instructions, regulatory bypass, etc.).
-        Defaults to ``None`` (generalized mode — behaviour is identical to
-        the original pipeline).
-    """
-    vectorizer, model = _load()
+
+def deobfuscate(text: str) -> str:
+    """Undo common evasion tricks before classification:
+    zero-width characters, s p a c e d / d.o.t.t.e.d letters, and l33t-speak.
+    "i g n o r e  a l l" -> "ignore all", "1gn0re" -> "ignore"."""
+    t = _ZERO_WIDTH.sub("", text)
+    # Words are separated by 2+ spaces in spaced-out text; keep those as word breaks.
+    t = _SPACED_LETTERS.sub(lambda m: re.sub(r"[ .\-_*]", "", m.group(0)) if "  " not in m.group(0)
+                            else " ".join(re.sub(r"[ .\-_*]", "", w) for w in re.split(r"\s{2,}", m.group(0))), t)
+    t = re.sub(r"\b\w*\d\w*\b", lambda m: m.group(0).translate(_LEET) if re.search(r"[A-Za-z]", m.group(0)) else m.group(0), t)
+    return t
+
+
+def _stage1_score(vectorizer, model, raw_text: str, domain: str = None):
     cleaned = preprocess(raw_text)
 
     # Support both old (single vectorizer) and new (dual) format
@@ -220,12 +221,41 @@ def classify_prompt(raw_text: str, domain: str = None) -> dict:
 
     try:
         proba = model.predict_proba(combined)[0]
-        risk_score = round(float(proba[1]), 4)
     except ValueError:
         # Fallback to no finance features if shape mismatch
         combined_fallback = hstack([tfidf_vec, generic_vec], format="csr")
         proba = model.predict_proba(combined_fallback)[0]
-        risk_score = round(float(proba[1]), 4)
+    return round(float(proba[1]), 4), cleaned, tfidf_vec
+
+
+def classify_prompt(raw_text: str, domain: str = None) -> dict:
+    """
+    Classify a prompt and return a risk assessment.
+
+    Parameters
+    ----------
+    raw_text : str
+        The user's raw input prompt.
+    domain : str, optional
+        Deployment domain context.  Currently supported value: ``"finance"``.
+        When provided, finance-specific feature signals are computed and
+        merged into the feature vector, boosting detection of financial
+        threats (PII exfiltration, fraud instructions, regulatory bypass, etc.).
+        Defaults to ``None`` (generalized mode — behaviour is identical to
+        the original pipeline).
+    """
+    vectorizer, model = _load()
+    risk_score, cleaned, tfidf_vec = _stage1_score(vectorizer, model, raw_text, domain)
+
+    # Score the de-obfuscated text too and keep the HIGHER risk, so tricks
+    # like "i g n o r e  a l l  p r e v i o u s" or "1gn0re" can't hide
+    # an attack from the TF-IDF features.
+    normalized = deobfuscate(raw_text)
+    deobfuscated = normalized != raw_text
+    if deobfuscated:
+        alt_score, alt_cleaned, alt_vec = _stage1_score(vectorizer, model, normalized, domain)
+        if alt_score > risk_score:
+            risk_score, cleaned, tfidf_vec = alt_score, alt_cleaned, alt_vec
 
     # Finance domain: if any high-confidence finance threat signal fires,
     # escalate risk_score to ensure WARN or BLOCK is triggered even when
@@ -261,6 +291,7 @@ def classify_prompt(raw_text: str, domain: str = None) -> dict:
         "attack_type": attack_type,
         "attack_type_source": attack_type_source,
         "domain_features": extract_features_breakdown(raw_text),
+        "deobfuscated": deobfuscated,
     }
 
     # Attach finance-specific breakdown when in finance domain mode

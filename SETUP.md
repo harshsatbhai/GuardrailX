@@ -171,16 +171,22 @@ automatically; no manual restarts needed.
 - **ML service interactive docs:** http://localhost:8000/docs — test
   `/classify` and `/filter` directly in the browser without going through
   the frontend at all.
-- **Test your Groq key in isolation** (if you switch `LLM_PROVIDER=groq`):
+- **Test your Groq key in isolation** (Groq is the default `LLM_PROVIDER`):
   ```bash
   cd backend
   node scripts/test-groq-key.js
   ```
-- **Retrain the model** after changing the dataset:
+- **Retrain the model** after changing the dataset (required once after the
+  greeting false-positive fix, because existing `models/*.pkl` files are reused
+  otherwise — takes a few minutes):
   ```bash
   cd ml-service/app
+  python data/build_conversational_dataset.py
   python train_model.py
+  python train_attack_type_model.py
   ```
+  With Docker: delete `ml-service/app/models/*.pkl`, then `docker compose up --build`
+  (the entrypoint retrains when no model is found).
 
 ---
 
