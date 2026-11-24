@@ -45,7 +45,10 @@ axios
     {
       model,
       messages: [{ role: "user", content: "Say 'test successful' and nothing else." }],
-      max_tokens: 20,
+      // gpt-oss is a reasoning model: a tiny max_tokens is used up by its
+      // hidden reasoning and returns an EMPTY reply, so give it room.
+      max_completion_tokens: 512,
+      ...(/gpt-oss/i.test(model) && { reasoning_effort: "low", include_reasoning: false }),
     },
     {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -56,6 +59,7 @@ axios
   .then((res) => {
     console.log("✅ SUCCESS — your key works!");
     console.log("Groq responded:", res.data.choices?.[0]?.message?.content);
+    console.log("Model reported by Groq:", res.data.model);
   })
   .catch((err) => {
     console.log("❌ FAILED\n");

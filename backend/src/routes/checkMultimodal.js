@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const { classifyMultimodal } = require("../services/mlService");
-const { runPostClassificationPipeline, handlePipelineError } = require("./pipelineShared");
+const { runPostClassificationPipeline, handlePipelineError, classifyWithAllLayers } = require("./pipelineShared");
 
 const router = express.Router();
 
@@ -72,16 +72,22 @@ router.post("/:modality", upload.single("file"), async (req, res) => {
   try {
     // Stage 1/2 (ML service): extract text from the file, then classify it
     // exactly like a normal text prompt.
-    const classification = await classifyMultimodal(
+    const mlClassification = await classifyMultimodal(
       req.file.buffer, req.file.originalname, req.file.mimetype, modality, resolvedDomain
     );
 
-    if (!classification.extracted_text) {
+    if (!mlClassification.extracted_text) {
       return res.status(422).json({
         error: "No content extracted",
         message: `Could not extract any usable text from the uploaded ${modality} file.`,
       });
     }
+
+    // Text hidden inside images/audio/video/documents goes through the SAME
+    // LLM guard layers as typed prompts (indirect prompt injection defence).
+    const classification = await classifyWithAllLayers(
+      Promise.resolve(mlClassification), mlClassification.extracted_text, []
+    );
 
     const payload = await runPostClassificationPipeline({
       classification,

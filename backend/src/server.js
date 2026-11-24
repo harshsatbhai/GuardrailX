@@ -9,6 +9,8 @@ const connectDB = require("./config/db");
 const { optionalAuth } = require("./middleware/auth");
 const { fixedWindowLimiter, banGuard } = require("./middleware/rateLimiter");
 const { checkHealth } = require("./services/mlService");
+const { llmStatus } = require("./services/llmService");
+const { guardStatus } = require("./services/guardService");
 
 const authRoutes = require("./routes/auth");
 const checkPromptRoutes = require("./routes/checkPrompt");
@@ -48,6 +50,8 @@ app.get("/api/health", async (req, res) => {
     status: allOk ? "ok" : "degraded",
     ml_service: mlHealth,
     mongodb: { state: mongoState },
+    llm: llmStatus(),
+    guards: guardStatus(),
   });
 });
 

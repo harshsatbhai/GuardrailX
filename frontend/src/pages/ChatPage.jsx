@@ -62,6 +62,23 @@ const FINANCE_SUGGESTIONS = [
   { icon: ShieldCheck,text: "What is the current interest rate policy?" },
 ];
 
+// Builds the conversation context sent to the LLM. Only turns that were
+// actually answered by the model are included: blocked prompts, guard
+// refusals, errors and file uploads are left out.
+function buildHistory(msgs) {
+  const history = [];
+  for (let i = 0; i < msgs.length; i++) {
+    const m = msgs[i];
+    if (m.role !== "user" || m.fileName || !m.text) continue;
+    const reply = msgs[i + 1];
+    if (!reply || reply.role !== "assistant") continue;
+    if (reply.meta?.isSystemError || reply.meta?.action === "BLOCK" || !reply.meta?.llm_response) continue;
+    history.push({ role: "user", content: m.text });
+    history.push({ role: "assistant", content: reply.text });
+  }
+  return history.slice(-12);
+}
+
 export default function ChatPage({ messages, setMessages, autoTitle, sessionId, onSidebarToggle, isSidebarOpen }) {
   const { domain } = useDomain();
   const isFinance = domain === "finance";
@@ -108,7 +125,7 @@ export default function ChatPage({ messages, setMessages, autoTitle, sessionId, 
     setLoadingLabel("Checking prompt against the guardrail...");
 
     try {
-      const result = await checkPrompt(text, domain);
+      const result = await checkPrompt(text, domain, { history: buildHistory(messages) });
       setMessages((m) => [
         ...m,
         {
@@ -141,7 +158,7 @@ export default function ChatPage({ messages, setMessages, autoTitle, sessionId, 
     setLoadingLabel("Checking updated prompt against the guardrail...");
 
     try {
-      const result = await checkPrompt(newText, domain);
+      const result = await checkPrompt(newText, domain, { history: buildHistory(baseMessages) });
       setMessages((m) => [
         ...m,
         {
@@ -183,7 +200,10 @@ export default function ChatPage({ messages, setMessages, autoTitle, sessionId, 
     setLoadingLabel("Generating a fresh, creative response...");
 
     try {
-      const result = await checkPrompt(userPromptText, domain, { regenerate: true });
+      const result = await checkPrompt(userPromptText, domain, {
+        regenerate: true,
+        history: buildHistory(baseMessages.slice(0, -1)),
+      });
       setMessages((m) => [
         ...m,
         {

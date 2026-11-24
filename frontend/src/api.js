@@ -17,6 +17,7 @@ export async function checkPrompt(text, domain, options = {}) {
     text,
     domain,
     regenerate: Boolean(options.regenerate),
+    history: options.history || [],
   });
   return data;
 }
