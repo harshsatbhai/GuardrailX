@@ -312,4 +312,15 @@ of your Phase 1 report: Stage 1 (auth) → `middleware/auth.js`; Stage 2
 (logging + dashboard) → `PromptLog.js` + `DashboardPage.jsx`; §3.3 (rate
 limiting) → `rateLimiter.js`.
 
+---
+
+## 9. Authors
+
+- Harshwardhan Satbhai ([GitHub](https://github.com/harshsatbhai))
 - Hitesh Rane ([GitHub](https://github.com/hiteshrane001))
+
+---
+
+## 10. License
+
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
