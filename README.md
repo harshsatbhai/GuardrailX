@@ -317,6 +317,7 @@ limiting) → `rateLimiter.js`.
 ## 9. Authors
 
 - Harshwardhan Satbhai ([GitHub](https://github.com/harshsatbhai))
+- Vaibhav More ([GitHub](https://github.com/vaibhavmore04))
 - Hitesh Rane ([GitHub](https://github.com/hiteshrane001))
 
 ---
